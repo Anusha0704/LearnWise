@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Courses - LearnWise</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: #F5F1E3;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333333;
+            padding: 2rem;
+        }
+
+        .navbar-custom {
+            background-color: #4C9A9A;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .navbar-custom a {
+            color: #F5F1E3;
+            font-weight: bold;
+            margin: 0 1rem;
+            text-decoration: none;
+        }
+
+        .navbar-custom a:hover {
+            text-decoration: underline;
+        }
+
+        .filter-form {
+            background-color: #ffffff;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+
+        .filter-form select, .filter-form input {
+            margin-bottom: 1rem;
+        }
+
+        .btn-filter {
+            background-color: #E2725B;
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-filter:hover {
+            background-color: #C65A49;
+        }
+
+        .table-custom {
+            background-color: #ffffff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        .table-custom th {
+            background-color: #4C9A9A;
+            color: #F5F1E3;
+            text-align: center;
+        }
+
+        .table-custom td {
+            text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="navbar-custom d-flex justify-content-between align-items-center">
+    <div>
+        <span style="color: #F5F1E3; font-weight: bold; font-size: 1.5rem;">LearnWise</span>
+    </div>
+
+    <div class="d-flex justify-content-center flex-grow-1">
+        <a href="{{ url_for('index') }}">Home</a> |
+        <a href="{{ url_for('add_course') }}">Add Course</a> |
+        <a href="{{ url_for('add_rating') }}">Add Rating</a> 
+        {% if current_user.is_authenticated and current_user.is_admin %}
+            | <a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a> 
+        {% endif %}
+    </div>
+
+    <div>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</div>
+
+
+    <h2 class="mb-4 text-center" style="color:#4C9A9A;">Courses</h2>
+
+    <form method="GET" action="{{ url_for('index') }}" class="filter-form">
+        <div class="row">
+            <div class="col-md-4">
+                <label>Title:</label>
+                <input type="text" name="title" value="{{ search_title }}" class="form-control" placeholder="Search title...">
+            </div>
+            <div class="col-md-4">
+                <label>Platform:</label>
+                <select name="platform" class="form-control">
+                    <option value="">All</option>
+                    {% for p in platforms %}
+                        <option value="{{ p[0] }}" {% if selected_platform == p[0] %}selected{% endif %}>{{ p[0] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label>Category:</label>
+                <select name="category" class="form-control">
+                    <option value="">All</option>
+                    {% for c in categories %}
+                        <option value="{{ c[0] }}" {% if selected_category == c[0] %}selected{% endif %}>{{ c[0] }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-md-4">
+                <label>Sort Duration:</label>
+                <select name="sort_duration" class="form-control">
+                    <option value="">None</option>
+                    <option value="asc" {% if sort_duration == 'asc' %}selected{% endif %}>Ascending</option>
+                    <option value="desc" {% if sort_duration == 'desc' %}selected{% endif %}>Descending</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label>Sort Price:</label>
+                <select name="sort_price" class="form-control">
+                    <option value="">None</option>
+                    <option value="asc" {% if sort_price == 'asc' %}selected{% endif %}>Ascending</option>
+                    <option value="desc" {% if sort_price == 'desc' %}selected{% endif %}>Descending</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label>Sort Rating:</label>
+                <select name="sort_rating" class="form-control">
+                    <option value="">None</option>
+                    <option value="asc" {% if sort_rating == 'asc' %}selected{% endif %}>Ascending</option>
+                    <option value="desc" {% if sort_rating == 'desc' %}selected{% endif %}>Descending</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="text-center mt-3">
+            <button type="submit" class="btn btn-filter">Filter</button>
+        </div>
+    </form>
+
+    <table class="table table-bordered table-custom">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Platform</th>
+                <th>Category</th>
+                <th>Duration</th>
+                <th>Price</th>
+                <th>Number of Ratings</th>
+                <th>Rating</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for course, rating, num_ratings in courses_with_ratings %}
+            <tr>
+                <td>{{ course.title }}</td>
+                <td>{{ course.source }}</td>
+                <td>{{ course.subject }}</td>
+                <td>{{ course.duration }} hrs</td>
+                <td>${{ course.price }}</td>
+                <td>{{ num_ratings if num_ratings else '0' }}</td>
+                <td>{{ rating if rating else 'N/A' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</body>
+</html>
